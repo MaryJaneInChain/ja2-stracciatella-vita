@@ -1,3 +1,5 @@
+> **PS Vita port** — this fork's `vita` branch runs JA2 Stracciatella on the PlayStation Vita. See [vita/README.md](vita/README.md).
+
 # JA2 Stracciatella
 
 [![GitHub CI](https://img.shields.io/github/actions/workflow/status/ja2-stracciatella/ja2-stracciatella/github-ci.yml?branch=master&label=GitHub%20CI&logo=github)](https://github.com/ja2-stracciatella/ja2-stracciatella/actions?query=workflow%3A%22GitHub+CI%22)

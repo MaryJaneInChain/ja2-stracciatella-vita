@@ -1,0 +1,7 @@
+FROM docker.io/vitasdk/vitasdk:2026.08
+
+# Rust: Vita is a tier-3 target -> nightly + rust-src for -Zbuild-std
+ENV RUSTUP_HOME=/opt/rustup CARGO_HOME=/opt/cargo PATH=/opt/cargo/bin:$PATH
+RUN (command -v curl >/dev/null || (apk add --no-cache curl 2>/dev/null || (apt-get update && apt-get install -y curl))) \
+ && curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain nightly --component rust-src \
+ && chmod -R a+rwX /opt/rustup /opt/cargo

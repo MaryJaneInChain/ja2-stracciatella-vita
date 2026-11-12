@@ -15,3 +15,9 @@ TAGS
 /compile_commands.json
 /*/CMakeUserPresets.json
 docs-generated/
+
+# PS Vita port (vita/build.sh, vita/stage-data.sh)
+/build-vita/
+/vita-data/
+/dumps/
+__pycache__/
