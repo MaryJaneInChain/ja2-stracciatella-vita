@@ -173,10 +173,11 @@ elseif(VITA)
     include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
     vita_create_self(eboot.bin ${JA2_BINARY} UNSAFE)
     set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d ATTRIBUTE2=12") # extended memory mode: +109MB app budget
-    # LiveArea art from the game itself (GOG icon, main menu flag, title logo); PNGs must be 8-bit indexed
+    # LiveArea art from the game itself (GOG icon, main menu flag, title logo; vita/make-art.py); PNGs must be 8-bit indexed
     set(VITA_SCE_SYS ${CMAKE_CURRENT_SOURCE_DIR}/src/vita/sce_sys)
     vita_create_vpk(ja2-stracciatella.vpk JAST00001 eboot.bin VERSION 01.00 NAME "JA2 Stracciatella"
         FILE ${VITA_SCE_SYS}/icon0.png sce_sys/icon0.png
+             ${VITA_SCE_SYS}/pic0.png sce_sys/pic0.png
              ${VITA_SCE_SYS}/livearea/contents/bg.png sce_sys/livearea/contents/bg.png
              ${VITA_SCE_SYS}/livearea/contents/startup.png sce_sys/livearea/contents/startup.png
              ${VITA_SCE_SYS}/livearea/contents/template.xml sce_sys/livearea/contents/template.xml)

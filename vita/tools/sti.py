@@ -1,4 +1,4 @@
-# Minimal SLF extractor + STI (STCI) decoder -> PNG. Usage: sti.py file.slf name.sti out.png [subimage]
+# Minimal SLF extractor + STI (STCI) decoder -> PNG. Usage: sti.py file.slf name.sti out.png [subimage] [alpha]
 import struct, sys
 from PIL import Image
 
@@ -14,7 +14,8 @@ def slf_get(slf, name):
             return d[off:off+ln]
     raise SystemExit('not found: ' + name)
 
-def sti_to_image(b, sub=0):
+def sti_to_image(b, sub=0, alpha=False):
+    """alpha: 8-bit images get palette index 0 (JA2's transparent colour) as alpha 0."""
     assert b[:4] == b'STCI'
     _, _, transp, flags, h, w = struct.unpack_from('<IIIIHH', b, 4)
     if flags & 0x04:  # 16-bit RGB565, uncompressed
@@ -38,9 +39,13 @@ def sti_to_image(b, sub=0):
         else: out += data[i:i+c]; i += c
     img = Image.frombytes('P', (sw, sh), bytes(out[:sw * sh]).ljust(sw * sh, b'\0'))
     img.putpalette(pal)
+    if alpha:
+        img.info['transparency'] = 0
+        return img.convert('RGBA')
     return img.convert('RGB')
 
-slf, name, outp = sys.argv[1:4]
-sub = int(sys.argv[4]) if len(sys.argv) > 4 else 0
-sti_to_image(slf_get(slf, name), sub).save(outp)
-print(outp)
+if __name__ == '__main__':
+    slf, name, outp = sys.argv[1:4]
+    sub = int(sys.argv[4]) if len(sys.argv) > 4 else 0
+    sti_to_image(slf_get(slf, name), sub, 'alpha' in sys.argv[5:]).save(outp)
+    print(outp)
