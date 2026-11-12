@@ -35,6 +35,9 @@
 #include "VSurface.h"
 #include "WorldMan.h"
 #include "UILayout.h"
+#ifdef __vita__
+#include "VitaSettings.h"
+#endif
 
 #include <string_theory/string>
 
@@ -140,6 +143,10 @@ static GUIButtonRef guiOptGotoSaveGameBtn;
 static GUIButtonRef guiOptGotoLoadGameBtn;
 static GUIButtonRef guiQuitButton;
 static GUIButtonRef guiDoneButton;
+#ifdef __vita__
+static GUIButtonRef guiVitaButton; // opens the Vita settings page
+static void BtnVitaCallback(GUI_BUTTON* btn, UINT32 reason);
+#endif
 
 
 //checkbox to toggle tracking mode on or off
@@ -271,6 +278,10 @@ static void EnterOptionsScreen(void)
 	guiOptGotoLoadGameBtn = MakeButton(OPT_LOAD_BTN_X, BtnOptGotoLoadGameCallback, zOptionsText[OPT_LOAD_GAME]);
 	guiQuitButton         = MakeButton(OPT_QUIT_BTN_X, BtnOptQuitCallback,         zOptionsText[OPT_MAIN_MENU]);
 	guiDoneButton         = MakeButton(OPT_DONE_BTN_X, BtnDoneCallback,            zOptionsText[OPT_DONE]);
+#ifdef __vita__
+	guiVitaButton = CreateTextButton("Vita settings", FONT12ARIAL, FONT_MCOLOR_WHITE, FONT_MCOLOR_BLACK,
+		40 + STD_SCREEN_X, 398 + STD_SCREEN_Y, 140, 22, MSYS_PRIORITY_HIGH, BtnVitaCallback);
+#endif
 
 	// Toggle Boxes
 	UINT16 usTextHeight = GetFontHeight(OPT_MAIN_FONT);
@@ -388,6 +399,9 @@ static void ExitOptionsScreen(void)
 	RemoveButton( guiOptGotoLoadGameBtn );
 	RemoveButton( guiQuitButton );
 	RemoveButton( guiDoneButton );
+#ifdef __vita__
+	RemoveButton( guiVitaButton );
+#endif
 
 	UnloadButtonImage(giOptionsButtonImages);
 
@@ -570,6 +584,14 @@ static void BtnOptQuitCallback(GUI_BUTTON* btn, UINT32 reason)
 		DoOptionsMessageBox(zOptionsText[OPT_RETURN_TO_MAIN], OPTIONS_SCREEN, MSG_BOX_FLAG_YESNO, ConfirmQuitToMainMenuMessageBoxCallBack);
 	}
 }
+
+
+#ifdef __vita__
+static void BtnVitaCallback(GUI_BUTTON* btn, UINT32 reason)
+{
+	if (reason & MSYS_CALLBACK_REASON_POINTER_UP) SetOptionsExitScreen(VITA_SETTINGS_SCREEN);
+}
+#endif
 
 
 static void BtnDoneCallback(GUI_BUTTON* btn, UINT32 reason)

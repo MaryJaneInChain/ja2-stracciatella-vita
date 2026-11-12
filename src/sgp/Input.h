@@ -52,6 +52,9 @@ void MouseWheelScroll(const SDL_MouseWheelEvent*);
 
 void KeyDown(const SDL_KeyboardEvent*);
 void KeyUp(  const SDL_KeyboardEvent*);
+#ifdef __vita__
+void VitaPollGamepad();
+#endif
 void TextInput(  const SDL_TextInputEvent*);
 
 void FingerMove(const SDL_TouchFingerEvent*);

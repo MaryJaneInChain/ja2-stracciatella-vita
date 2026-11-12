@@ -271,12 +271,54 @@ static void MenuButtonCallback(GUI_BUTTON *btn, UINT32 reason)
 }
 
 
+// index of the menu button under the cursor, or -1
+static int HoveredMenuButton()
+{
+	auto const pos = GetMousePos();
+	for (int i = 0; i < NUM_MENU_ITEMS; ++i)
+	{
+		GUIButtonRef const& b = iMenuButtons[i];
+		if (b && pos.iX >= b->X() && pos.iX < b->BottomRightX() && pos.iY >= b->Y() && pos.iY < b->BottomRightY()) return i;
+	}
+	return -1;
+}
+
+
+// Up/Down put the cursor on the next/previous enabled item (gamepad D-pad), Enter activates it
+static void HandleMenuKeyNavigation(UINT32 const key)
+{
+	int const cur = HoveredMenuButton();
+	if (key == SDLK_RETURN)
+	{
+		if (cur >= 0 && iMenuButtons[cur]->Enabled()) MenuButtonCallback(iMenuButtons[cur], MSYS_CALLBACK_REASON_POINTER_UP);
+		return;
+	}
+	int const step = key == SDLK_DOWN ? 1 : -1;
+	int i = cur < 0 ? (step > 0 ? -1 : NUM_MENU_ITEMS) : cur;
+	for (int n = 0; n < NUM_MENU_ITEMS; ++n)
+	{
+		i = (i + step + NUM_MENU_ITEMS) % NUM_MENU_ITEMS;
+		GUIButtonRef const& b = iMenuButtons[i];
+		if (b && b->Enabled())
+		{
+			SetSafeMousePosition(b->X() + b->W() / 2, b->Y() + b->H() / 2);
+			return;
+		}
+	}
+}
+
+
 static void HandleMainMenuInput(void)
 {
 	InputAtom InputEvent;
 	while (DequeueSpecificEvent(&InputEvent, KEYBOARD_EVENTS))
 	{
-		if (InputEvent.usEvent == KEY_UP)
+		if (InputEvent.usEvent == KEY_DOWN &&
+			(InputEvent.usParam == SDLK_UP || InputEvent.usParam == SDLK_DOWN || InputEvent.usParam == SDLK_RETURN))
+		{
+			HandleMenuKeyNavigation(InputEvent.usParam);
+		}
+		else if (InputEvent.usEvent == KEY_UP)
 		{
 			switch (InputEvent.usParam)
 			{

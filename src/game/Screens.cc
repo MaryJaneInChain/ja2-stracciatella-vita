@@ -15,6 +15,9 @@
 #include "Screens.h"
 #include "ScreenIDs.h"
 #include "ShopKeeper_Interface.h"
+#ifdef __vita__
+#include "VitaSettings.h"
+#endif
 
 
 Screens const GameScreens[] =
@@ -44,7 +47,10 @@ Screens const GameScreens[] =
 	{ NULL,                 NULL,                        NULL                     },
 	{ NULL,                 IntroScreenHandle,           NULL                     },
 	{ nullptr,              HandleScreen<CREDIT_SCREEN>, nullptr                  },
-	{ QuestDebugScreenInit, QuestDebugScreenHandle,      NULL                     }
+	{ QuestDebugScreenInit, QuestDebugScreenHandle,      NULL                     },
+#ifdef __vita__
+	{ NULL,                 VitaSettingsScreenHandle,    NULL                     },
+#endif
 };
 
 
