@@ -223,7 +223,10 @@ impl SlfHeader {
         let num_bytes = num_entries * ENTRY_BYTES;
         input.seek(SeekFrom::End(-(i64::from(num_bytes))))?;
 
-        let mut handle = input.take(u64::from(num_bytes));
+        // one read for the whole table: per-field reads were ~7 syscalls per entry (~50s at startup on a Vita memory card)
+        let mut table = vec![0u8; num_bytes as usize];
+        input.read_exact(&mut table)?;
+        let mut handle = Cursor::new(table);
         let mut entries = Vec::new();
         for _ in 0..num_entries {
             let file_path = handle.read_fixed_string(256)?;
@@ -242,7 +245,7 @@ impl SlfHeader {
                 file_time,
             });
         }
-        assert_eq!(handle.limit(), 0);
+        assert_eq!(handle.position(), u64::from(num_bytes));
 
         Ok(entries)
     }

@@ -31,6 +31,10 @@ use crate::fs::canonicalize;
 /// Returns the path to the assets directory.
 /// It contains mods and externalized subdirectories.
 pub fn get_assets_dir() -> PathBuf {
+    // vita has no usable exe path; "ux0:" paths aren't absolute to rust either
+    #[cfg(target_os = "vita")]
+    return "ux0:data/ja2-stracciatella".into();
+    #[allow(unreachable_code)]
     let extra_data_dir_env = option_env!("EXTRA_DATA_DIR").unwrap_or(".");
     let extra_data_dir = std::env::current_exe()
         .and_then(|exe| {

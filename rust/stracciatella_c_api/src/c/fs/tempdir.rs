@@ -9,7 +9,31 @@ use crate::c::common::*;
 /// A directory in the filesystem that is automatically deleted.
 /// The contents of the directory are deleted before the directory is deleted.
 pub struct TempDir {
+    #[cfg(not(target_os = "vita"))]
     inner: fs::TempDir,
+    #[cfg(target_os = "vita")]
+    inner: VitaTempDir,
+}
+
+/// tempfile joins any non-absolute dir onto current_dir() ("app0:/"), and Rust never
+/// treats "ux0:..." as absolute, so on Vita use a fixed dir under temp_dir() via std::fs.
+#[cfg(target_os = "vita")]
+struct VitaTempDir(std::path::PathBuf);
+
+#[cfg(target_os = "vita")]
+impl VitaTempDir {
+    fn new() -> std::io::Result<Self> {
+        let p = std::env::temp_dir().join("ja2-stracciatella-tmp");
+        let _ = std::fs::remove_dir_all(&p); // leftovers from a crashed run
+        std::fs::create_dir_all(&p)?;
+        Ok(VitaTempDir(p))
+    }
+    fn path(&self) -> &std::path::Path {
+        &self.0
+    }
+    fn close(self) -> std::io::Result<()> {
+        std::fs::remove_dir_all(&self.0)
+    }
 }
 
 /// Attempts to create a temporary directory inside the temporary directory of the operating system.
@@ -30,7 +54,9 @@ pub extern "C" fn TempDir_create() -> *mut TempDir {
             .map_err(|e| e.to_string())
             .and_then(|v| builder.tempdir_in(v).map_err(|e| e.to_string()))
     };
-    #[cfg(not(target_os = "android"))]
+    #[cfg(target_os = "vita")]
+    let tempdir = VitaTempDir::new().map_err(|e| e.to_string());
+    #[cfg(not(any(target_os = "android", target_os = "vita")))]
     let tempdir = builder.tempdir().map_err(|e| e.to_string());
 
     match tempdir {

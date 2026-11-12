@@ -155,6 +155,20 @@ impl Logger {
         );
 
         match File::create(&log_file) {
+            // vita: no terminal, and simplelog's several small unbuffered writes per line
+            // cost ~0.25s on the memory card -> one write per line, file only
+            #[cfg(target_os = "vita")]
+            Ok(f) => {
+                drop(logger);
+                // debug logs every file open; each flushed line stalls on the card mid-game
+                RuntimeLevelFilter::init(CombinedLogger::new(vec![WriteLogger::new(
+                    LevelFilter::Info,
+                    config,
+                    std::io::LineWriter::new(f),
+                )]));
+                log::info!("Logging to file {:?}", &log_file);
+            }
+            #[cfg(not(target_os = "vita"))]
             Ok(f) => {
                 RuntimeLevelFilter::init(CombinedLogger::new(vec![
                     logger,

@@ -219,7 +219,7 @@ pub fn free_space(path: &Path) -> io::Result<u64> {
             _ => Ok(*unsafe { free_bytes.QuadPart() }),
         };
     }
-    #[cfg(all(unix, not(target_os = "android")))]
+    #[cfg(all(unix, not(any(target_os = "android", target_os = "vita"))))]
     #[allow(clippy::cast_lossless, clippy::useless_conversion)]
     {
         // use statvfs in unix family
@@ -235,7 +235,8 @@ pub fn free_space(path: &Path) -> io::Result<u64> {
             _ => Err(io::Error::last_os_error()),
         };
     }
-    #[cfg(target_os = "android")]
+    // ponytail: vita newlib has no real statvfs; report 1GB like android, use sceIoDevctl if it matters
+    #[cfg(any(target_os = "android", target_os = "vita"))]
     #[allow(clippy::cast_lossless)]
     {
         return Ok(1024 * 1024 * 1024);

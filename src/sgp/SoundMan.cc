@@ -177,8 +177,10 @@ static SDL_AudioStream* gAudioStream = NULL;
 // When the system needs to be shut down, fShutdownBufferServiceThread needs to be set to true and the buffer servicing thread
 // needs to be notified using the condition_variable
 SDL_Thread *bufferServiceThread = NULL;
-std::mutex mutexBuffersNeedService;
-std::condition_variable conditionBuffersNeedService;
+// SDL primitives rather than std::mutex/condition_variable: on PS Vita the latter go through
+// pthread-embedded, whose cancellable wait crashes on threads not created via pthread (SDL threads)
+SDL_Mutex *mutexBuffersNeedService = NULL;
+SDL_Condition *conditionBuffersNeedService = NULL;
 BOOLEAN fBuffersNeedService = FALSE;
 BOOLEAN fShutdownBufferServiceThread = FALSE;
 
@@ -547,11 +549,12 @@ static int SoundServiceBuffers(void *)
 {
 	SLOGD("Started SoundManBufferServiceThread");
 	while (1) {
-		std::unique_lock<std::mutex> lk(mutexBuffersNeedService);
-		conditionBuffersNeedService.wait(lk, []{
-			return fBuffersNeedService || fShutdownBufferServiceThread;
-		});
+		SDL_LockMutex(mutexBuffersNeedService);
+		while (!fBuffersNeedService && !fShutdownBufferServiceThread) {
+			SDL_WaitCondition(conditionBuffersNeedService, mutexBuffersNeedService);
+		}
 		if (fShutdownBufferServiceThread) {
+			SDL_UnlockMutex(mutexBuffersNeedService);
 			SLOGD("Stopped SoundManBufferServiceThread");
 			return 0;
 		}
@@ -565,6 +568,7 @@ static int SoundServiceBuffers(void *)
 			}
 			fBuffersNeedService = FALSE;
 		}
+		SDL_UnlockMutex(mutexBuffersNeedService);
 	}
 }
 
@@ -975,10 +979,10 @@ void SDLCALL SoundCallback(void* userdata, SDL_AudioStream* stream, int addition
 
 	if (ringBuffersNeedService) {
 		// We try to lock the mutex. If it is already locked, buffers are already serviced
-		if (mutexBuffersNeedService.try_lock()) {
+		if (mutexBuffersNeedService && SDL_TryLockMutex(mutexBuffersNeedService)) {
 			fBuffersNeedService = true;
-			mutexBuffersNeedService.unlock();
-			conditionBuffersNeedService.notify_one();
+			SDL_UnlockMutex(mutexBuffersNeedService);
+			SDL_SignalCondition(conditionBuffersNeedService);
 		}
 	}
 }
@@ -1010,6 +1014,8 @@ static BOOLEAN SoundInitHardware(void)
 
 		gTargetDecoderConfig = ma_decoder_config_init(SOUND_MA_SOUND_FORMAT, gTargetAudioSpec.channels, gTargetAudioSpec.freq);
 
+		mutexBuffersNeedService = SDL_CreateMutex();
+		conditionBuffersNeedService = SDL_CreateCondition();
 		bufferServiceThread = SDL_CreateThread(SoundServiceBuffers, "SoundManBufferServiceThread", (void *)NULL);
 		if (!bufferServiceThread) {
 			throw std::runtime_error(ST::format("SDL_CreateThread for SoundManBufferServiceThread returned error: {}", SDL_GetError()).c_str());
@@ -1033,10 +1039,11 @@ static void SoundShutdownHardware(void)
 {
 	if (bufferServiceThread != NULL) {
 		{
-			std::lock_guard<std::mutex> lk(mutexBuffersNeedService);
+			SDL_LockMutex(mutexBuffersNeedService);
 			fShutdownBufferServiceThread = true;
+			SDL_UnlockMutex(mutexBuffersNeedService);
 		}
-		conditionBuffersNeedService.notify_one();
+		SDL_SignalCondition(conditionBuffersNeedService);
 		int returnValue = 1;
 		SDL_WaitThread(bufferServiceThread, &returnValue);
 		if (returnValue != 0) {

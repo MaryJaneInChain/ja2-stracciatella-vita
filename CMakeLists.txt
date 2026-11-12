@@ -159,6 +159,27 @@ elseif(NOT (LOCAL_SDL_LIB STREQUAL ""))
         set(SDL_CPU_X86 ON CACHE BOOL "" FORCE)
     endif()
     include("${CMAKE_CURRENT_SOURCE_DIR}/${LOCAL_SDL_LIB}")
+elseif(VITA)
+    # Vita has no shared libs: alias the static SDL3 so the rest of the build is unchanged
+    find_package(SDL3 REQUIRED CONFIG COMPONENTS SDL3-static GLOBAL)
+    add_library(SDL3::SDL3-shared ALIAS SDL3::SDL3-static)
+    # newlib+gcc only define LLONG_MAX in C++ via <climits>; luaconf.h needs it
+    target_compile_options(${JA2_BINARY} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-include climits>)
+    target_sources(${JA2_BINARY} PRIVATE src/vita/newlib_shims.c src/vita/VitaSettings.cc src/vita/VitaTactical.cc src/vita/VitaActionMenu.cc)
+    target_include_directories(${JA2_BINARY} PRIVATE src/vita)
+    target_compile_definitions(${JA2_BINARY} PRIVATE MA_NO_RUNTIME_LINKING) # no dlopen on vita
+    target_link_options(${JA2_BINARY} PRIVATE -Wl,-q -Wl,--gc-sections # -q: relocations needed by vita-elf-create
+        -Wl,-u,pthread_cancel -Wl,-u,pthread_once) # static link: libstdc++/libgcc only weakly reference these; without them std::mutex and thread_local break
+    include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
+    vita_create_self(eboot.bin ${JA2_BINARY} UNSAFE)
+    set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d ATTRIBUTE2=12") # extended memory mode: +109MB app budget
+    # LiveArea art from the game itself (GOG icon, main menu flag, title logo); PNGs must be 8-bit indexed
+    set(VITA_SCE_SYS ${CMAKE_CURRENT_SOURCE_DIR}/src/vita/sce_sys)
+    vita_create_vpk(ja2-stracciatella.vpk JAST00001 eboot.bin VERSION 01.00 NAME "JA2 Stracciatella"
+        FILE ${VITA_SCE_SYS}/icon0.png sce_sys/icon0.png
+             ${VITA_SCE_SYS}/livearea/contents/bg.png sce_sys/livearea/contents/bg.png
+             ${VITA_SCE_SYS}/livearea/contents/startup.png sce_sys/livearea/contents/startup.png
+             ${VITA_SCE_SYS}/livearea/contents/template.xml sce_sys/livearea/contents/template.xml)
 else()
     find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3-shared)
 endif()

@@ -222,6 +222,7 @@ try
 }
 catch (std::exception const& e)
 {
+	SLOGE("Game loop error on screen {}: {}", guiCurrentScreen, e.what()); // logged first: the emergency save below may crash too
 	guiPreviousOptionScreen = guiCurrentScreen;
 	char const* what = "file";
 	ST::string success = "failed";

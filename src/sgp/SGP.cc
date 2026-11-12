@@ -192,6 +192,9 @@ static void MainLoop()
 				// once every ~6944 microseconds.
 				constexpr auto targetResolution = 1'000'000us / 144;
 				auto const beforeGameLoop = std::chrono::steady_clock::now();
+#ifdef __vita__
+				VitaPollGamepad();
+#endif
 				FPS::GameLoopPtr();
 
 				// If the game loop took longer than 6944ms, this call does nothing.
@@ -372,7 +375,11 @@ int main(int argc, char* argv[])
 
 		////////////////////////////////////////////////////////////
 
+#ifdef __vita__
+		SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD); // Vita buttons, see VitaPollGamepad
+#else
 		SDL_Init(SDL_INIT_VIDEO);
+#endif
 
 		// restore output to the console (on windows when built with MINGW)
 	#ifdef __MINGW32__

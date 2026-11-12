@@ -96,6 +96,11 @@ pub extern "C" fn Path_push(path: *const c_char, newpath: *const c_char) -> *mut
 #[unsafe(no_mangle)]
 pub extern "C" fn Path_isAbsolute(path: *const c_char) -> bool {
     let path = path_buf_from_c_str_or_panic(unsafe_c_str(path));
+    // vita device paths ("ux0:data/...") have no leading '/'
+    #[cfg(target_os = "vita")]
+    if path.to_str().and_then(|s| s.split_once(':')).is_some_and(|(dev, _)| !dev.contains('/')) {
+        return true;
+    }
     path.is_absolute()
 }
 
