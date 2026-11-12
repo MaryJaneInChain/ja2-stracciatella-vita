@@ -106,7 +106,7 @@ ux0:data/ja2-stracciatella/
 ├── ja2.log                ← 游戏日志（运行时生成）
 └── overclock              ← 可选，放了就超频
 ```
-默认 ja2.json：简中 + `simplified-chinese-localization` mod，960x544，全屏，`debug: true`（方便看日志）。
+默认 ja2.json：英文、不加载 mod，960x544，全屏，`debug: false`。中文版用 `RESVERSION=SIMPLIFIED_CHINESE MODS='"simplified-chinese-localization"' vita/stage-data.sh`（只在 ja2.json 不存在时生成，已有的不会覆盖）。
 大批量传数据用 USB（VitaShell 按 START），FTP 只有约 200KB/s。
 
 ## 待办

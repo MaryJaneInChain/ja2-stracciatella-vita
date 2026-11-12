@@ -1,6 +1,8 @@
 #!/bin/sh
 # Assemble vita-data/ja2-stracciatella/ -> copy to ux0:data/ja2-stracciatella/ (FTP / USB).
 #   vita/stage-data.sh [path-to-JA2-install]   (default: the Wine/GOG install)
+# The generated ja2.json is English without mods; for e.g. the Chinese GOG release:
+#   RESVERSION=SIMPLIFIED_CHINESE MODS='"simplified-chinese-localization"' vita/stage-data.sh
 set -e
 cd "$(dirname "$(readlink -f "$0")")/.."
 GAME="${1:-$HOME/.wine/drive_c/Program Files (x86)/Jagged Alliance 2}"
@@ -21,11 +23,11 @@ rsync -a --delete --exclude Temp "$GAME/Data" "$OUT/data/"
 {
   "game_dir": "$V/data",
   "save_game_dir": "$V/.ja2/SavedGames",
-  "mods": ["simplified-chinese-localization"],
+  "mods": [${MODS:-}],
   "res": "960x544",
-  "resversion": "SIMPLIFIED_CHINESE",
+  "resversion": "${RESVERSION:-ENGLISH}",
   "fullscreen": true,
-  "debug": true,
+  "debug": false,
   "nosound": false
 }
 EOF

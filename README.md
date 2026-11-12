@@ -1,4 +1,65 @@
-> **PS Vita port** — this fork's `vita` branch runs JA2 Stracciatella on the PlayStation Vita. See [vita/README.md](vita/README.md).
+# JA2 Stracciatella for PS Vita
+
+A port of [JA2 Stracciatella](https://github.com/ja2-stracciatella/ja2-stracciatella) to the PlayStation Vita
+(HENkaku/Ensō, VitaShell). Branch `vita` carries the port; `master` tracks upstream.
+
+You need your own copy of the original *Jagged Alliance 2* game data (e.g. the GOG release). No game data is included.
+
+## Features
+
+- Full game, 960×544, with the bundled mods (e.g. Simplified Chinese localization)
+- Gamepad controls: stick cursor, tile-snapping D-pad cursor in tactical, right-stick map scroll,
+  L/R to cycle mercs, Select to hide the bottom panel, △ for a 3×3 context action menu
+- Front touch as mouse; rear touchpad as a relative or absolute pointer
+- Touch shortcut buttons beside the tactical panel
+- "Vita settings" page in the in-game options (confirm button, rear touchpad, cursor speeds)
+
+| Button | Action |
+|---|---|
+| Left stick | Cursor |
+| Right stick | Scroll the map |
+| ✕ / ○ | Left / right click (swappable in Vita settings) |
+| D-pad | Tactical: step the cursor one tile; menus: arrow keys |
+| △ | Tactical: context action menu; elsewhere: Enter |
+| □ | Space (next merc) |
+| L / R | Previous / next merc, centred |
+| Select | Hide / show the bottom panel |
+| Start | Esc |
+
+Porting notes (in Chinese) are in [vita/NOTES.md](vita/NOTES.md); [vita/HOTKEYS.md](vita/HOTKEYS.md) lists the game's keyboard hotkeys.
+
+## Install
+
+1. From [Releases](https://github.com/MaryJaneInChain/ja2-stracciatella-vita/releases) download
+   `ja2-stracciatella.vpk` and `ja2-stracciatella-data.zip`.
+2. Install the VPK with VitaShell (title ID `JAST00001`).
+3. Extract the zip to `ux0:data/`, giving `ux0:data/ja2-stracciatella/` with `externalized/`, `mods/` and `.ja2/ja2.json`.
+4. Copy the `Data` folder of your JA2 installation into `ux0:data/ja2-stracciatella/data/` (giving `data/Data/`) (USB is much faster than FTP).
+5. If your game is not the English version, edit `.ja2/ja2.json`: set `resversion` (e.g. `GERMAN`, `SIMPLIFIED_CHINESE`)
+   and, for Simplified Chinese, `"mods": ["simplified-chinese-localization"]`.
+6. Optional: an empty file `ux0:data/ja2-stracciatella/overclock` raises the CPU to 444 MHz.
+
+Saves go to `ux0:data/ja2-stracciatella/.ja2/SavedGames/`, the log to `ux0:data/ja2-stracciatella/ja2.log`.
+
+## Build
+
+Requires podman. Everything runs in a VitaSDK + Rust nightly container.
+
+```sh
+podman build --network=host -t stracciatella-vita-sdk vita
+vita/build.sh            # -> build-vita/ja2-stracciatella.vpk
+vita/stage-data.sh [path-to-JA2-install]   # -> vita-data/ja2-stracciatella/ (engine assets + your game data)
+VITA=ip:port vita/push.sh                  # upload both over VitaShell FTP
+```
+
+## License
+
+Same as upstream: see [SFI Source Code license agreement.txt](<SFI Source Code license agreement.txt>)
+(non-commercial use only).
+
+---
+
+*The upstream JA2 Stracciatella README follows.*
 
 # JA2 Stracciatella
 
