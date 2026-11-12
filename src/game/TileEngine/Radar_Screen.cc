@@ -189,6 +189,8 @@ static void RenderSquadList(void);
 
 void RenderRadarScreen()
 {
+	if (gfTacticalPanelHidden && !fInMapMode) return; // radar is part of the hidden bottom panel
+
 	// create / destroy squad list regions as nessacary
 	CreateDestroyMouseRegionsForSquadList();
 

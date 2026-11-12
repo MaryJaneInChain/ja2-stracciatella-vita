@@ -91,6 +91,7 @@ void HandleTacticalPanelSwitch()
 
 static void RenderPanel(void)
 {
+	if (gfTacticalPanelHidden) return;
 	switch (gsCurInterfacePanel)
 	{
 		case SM_PANEL:
@@ -504,7 +505,7 @@ void RenderTopmostTacticalInterface()
 
 	if (gfInSectorExitMenu) RenderSectorExitMenu();
 
-	if (fRenderRadarScreen)
+	if (fRenderRadarScreen && !gfTacticalPanelHidden) // clock sits in the bottom panel
 	{
 		RenderClock();
 		RenderTownIDString();

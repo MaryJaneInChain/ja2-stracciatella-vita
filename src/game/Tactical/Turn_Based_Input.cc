@@ -85,6 +85,10 @@
 #include <algorithm>
 #include <functional>
 
+// Hotkeys check the bottom panel's buttons; with the panel hidden (Vita Select) the buttons don't exist,
+// so treat a missing button as enabled and let the hotkey's other conditions decide.
+static bool PanelBtnEnabled(GUIButtonRef const& b) { return !b || b->Enabled(); }
+
 static BOOLEAN gfFirstCycleMovementStarted = FALSE;
 
 const SOLDIERTYPE* gUITargetSoldier = NULL;
@@ -1346,7 +1350,7 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 			// Nothing in hand and either not in SM panel, or the matching button
 			// is enabled if we are in SM panel
 			if (!gpItemPointer &&
-				(gsCurInterfacePanel != SM_PANEL || iSMPanelButtons[UPDOWN_BUTTON]->Enabled()))
+				(gsCurInterfacePanel != SM_PANEL || PanelBtnEnabled(iSMPanelButtons[UPDOWN_BUTTON])))
 			{
 				UIHandleChangeLevel(0);
 			}
@@ -1356,7 +1360,7 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 			// Nothing in hand and either not in SM panel, or the matching button
 			// is enabled if we are in SM panel
 			if (!(gTacticalStatus.uiFlags & ENGAGED_IN_CONV) &&
-				(gsCurInterfacePanel != SM_PANEL || iSMPanelButtons[NEXTMERC_BUTTON]->Enabled()) &&
+				(gsCurInterfacePanel != SM_PANEL || PanelBtnEnabled(iSMPanelButtons[NEXTMERC_BUTTON])) &&
 				!InKeyRingPopup())
 			{
 				SOLDIERTYPE* const sel = GetSelectedMan();
@@ -1439,7 +1443,7 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 		case 'b':
 			// Nothing in hand and either not in SM panel, or the matching button is enabled if we are in SM panel
 			if (!gpItemPointer &&
-				(gsCurInterfacePanel != SM_PANEL || iSMPanelButtons[BURSTMODE_BUTTON]->Enabled()))
+				(gsCurInterfacePanel != SM_PANEL || PanelBtnEnabled(iSMPanelButtons[BURSTMODE_BUTTON])))
 			{
 				SetBurstMode();
 			}
@@ -1455,8 +1459,8 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 				!gpItemPointer &&
 				!gfDisableTacticalPanelButtons &&
 				(
-					(gsCurInterfacePanel == SM_PANEL && iSMPanelButtons[SM_DONE_BUTTON]->Enabled()) ||
-					(gsCurInterfacePanel == TEAM_PANEL && iTEAMPanelButtons[TEAM_DONE_BUTTON]->Enabled())
+					(gsCurInterfacePanel == SM_PANEL && PanelBtnEnabled(iSMPanelButtons[SM_DONE_BUTTON])) ||
+					(gsCurInterfacePanel == TEAM_PANEL && PanelBtnEnabled(iTEAMPanelButtons[TEAM_DONE_BUTTON]))
 				))
 			{
 				*new_event = I_ENDTURN;
@@ -1508,7 +1512,7 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 			// Nothing in hand and either not in SM panel, or the matching button
 			//is enabled if we are in SM panel
 			if (!gpItemPointer &&
-				(gsCurInterfacePanel != SM_PANEL || iSMPanelButtons[LOOK_BUTTON]->Enabled()))
+				(gsCurInterfacePanel != SM_PANEL || PanelBtnEnabled(iSMPanelButtons[LOOK_BUTTON])))
 			{
 				*new_event = LC_CHANGE_TO_LOOK;
 			}
@@ -1520,8 +1524,8 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 				!gfDisableTacticalPanelButtons &&
 				!(gTacticalStatus.uiFlags & ENGAGED_IN_CONV) &&
 				(
-					(gsCurInterfacePanel == SM_PANEL   && iSMPanelButtons[SM_MAP_SCREEN_BUTTON]->Enabled()) ||
-					(gsCurInterfacePanel == TEAM_PANEL && iTEAMPanelButtons[TEAM_MAP_SCREEN_BUTTON]->Enabled())
+					(gsCurInterfacePanel == SM_PANEL   && PanelBtnEnabled(iSMPanelButtons[SM_MAP_SCREEN_BUTTON])) ||
+					(gsCurInterfacePanel == TEAM_PANEL && PanelBtnEnabled(iTEAMPanelButtons[TEAM_MAP_SCREEN_BUTTON]))
 				))
 			{
 				GoToMapScreenFromTactical();
@@ -1544,7 +1548,7 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 				!gfDisableTacticalPanelButtons   &&
 				!fDisableMapInterfaceDueToBattle &&
 				!gfInMeanwhile                   &&
-				(gsCurInterfacePanel != SM_PANEL || iSMPanelButtons[OPTIONS_BUTTON]->Enabled()))
+				(gsCurInterfacePanel != SM_PANEL || PanelBtnEnabled(iSMPanelButtons[OPTIONS_BUTTON])))
 			{
 				// Go to Options screen
 				guiPreviousOptionScreen = GAME_SCREEN;
@@ -1705,14 +1709,14 @@ static void HandleModShift(UINT32 const key, UIEventKind* const new_event)
 			// Nothing in hand and either not in SM panel, or the matching button
 			// is enabled if we are in SM panel
 			if (!(gTacticalStatus.uiFlags & ENGAGED_IN_CONV) &&
-				(gsCurInterfacePanel != SM_PANEL || iSMPanelButtons[NEXTMERC_BUTTON]->Enabled()) &&
+				(gsCurInterfacePanel != SM_PANEL || PanelBtnEnabled(iSMPanelButtons[NEXTMERC_BUTTON])) &&
 				!InKeyRingPopup())
 			{
 				if (SOLDIERTYPE* const sel = GetSelectedMan())
 				{
 					// Only allow if nothing in hand and if in SM panel, the Change Squad button must be enabled
 					if (gsCurInterfacePanel != TEAM_PANEL ||
-						iTEAMPanelButtons[CHANGE_SQUAD_BUTTON]->Enabled())
+						PanelBtnEnabled(iTEAMPanelButtons[CHANGE_SQUAD_BUTTON]))
 					{ // Select next squad
 						INT32        const current_squad = CurrentSquad();
 						SOLDIERTYPE* const new_soldier   = FindNextActiveSquad(sel);
@@ -2028,8 +2032,8 @@ static void HandleModAltCheats(UINT32 const key, UIEventKind * const new_event)
 				!gpItemPointer &&
 				!gfDisableTacticalPanelButtons &&
 				(
-					(gsCurInterfacePanel == SM_PANEL   && iSMPanelButtons[SM_DONE_BUTTON]->Enabled()) ||
-					(gsCurInterfacePanel == TEAM_PANEL && iTEAMPanelButtons[TEAM_DONE_BUTTON]->Enabled())
+					(gsCurInterfacePanel == SM_PANEL   && PanelBtnEnabled(iSMPanelButtons[SM_DONE_BUTTON])) ||
+					(gsCurInterfacePanel == TEAM_PANEL && PanelBtnEnabled(iTEAMPanelButtons[TEAM_DONE_BUTTON]))
 				))
 			{
 				FOR_EACH_IN_TEAM(s, OUR_TEAM)
@@ -3223,7 +3227,7 @@ static void ChangeCurrentSquad(INT32 iSquad)
 {
 	// only allow if nothing in hand and the Change Squad button for whichever panel we're in must be enabled
 	if ( ( gpItemPointer == NULL ) && !gfDisableTacticalPanelButtons &&
-			(gsCurInterfacePanel != TEAM_PANEL || iTEAMPanelButtons[CHANGE_SQUAD_BUTTON]->Enabled()))
+			(gsCurInterfacePanel != TEAM_PANEL || PanelBtnEnabled(iTEAMPanelButtons[CHANGE_SQUAD_BUTTON])))
 	{
 		if ( IsSquadOnCurrentTacticalMap( iSquad ) )
 		{
@@ -3257,6 +3261,7 @@ static void EscapeUILock(void)
 }
 
 #include "Map_Edgepoints.h"
+
 
 
 static void ToggleMapEdgepoints(void)

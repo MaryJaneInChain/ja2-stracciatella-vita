@@ -176,6 +176,9 @@ void InitPlayerUIBar( BOOLEAN fInterrupt );
 
 void ToggleTacticalPanels(void);
 
+extern BOOLEAN gfTacticalPanelHidden;
+void ToggleTacticalPanelHidden();
+
 void DirtyTopMessage(void);
 
 void BeginMultiPurposeLocator(INT16 sGridNo, INT8 bLevel);

@@ -849,9 +849,33 @@ static void SelectedMercPopupMoveCallback(MOUSE_REGION* pRegion, uint32_t iReaso
 static void SelectedMercEnemyIndicatorCallback(MOUSE_REGION* pRegion, UINT32 iReason);
 
 
+static void DrawFillerOnSurface(SGPVSurface* vsSurface, SGPBox const &dest);
+
 /** Fill empty space at the bottom of the screen. */
 static void FillEmptySpaceAtBottom()
 {
+#ifdef __vita__
+	// Vita: interface texture instead of black beside the panel (the side shortcut buttons sit on it).
+	// Drawn to the screen as well, which may still show the world from when the panel was hidden.
+	if (g_ui.isBigScreen())
+	{
+		UINT16 const y = g_ui.get_INV_INTERFACE_START_Y();
+		UINT16 const h = g_ui.m_screenHeight - y;
+		UINT16 const right = INTERFACE_START_X + g_ui.m_teamPanelWidth;
+		SGPBox const sides[] = {
+			{ 0, y, (UINT16)INTERFACE_START_X, h },
+			{ right, y, (UINT16)(g_ui.m_screenWidth - right), h },
+		};
+		for (SGPBox const& b : sides)
+		{
+			if (b.w == 0) continue;
+			DrawFillerOnSurface(guiSAVEBUFFER, b);
+			DrawFillerOnSurface(FRAME_BUFFER, b);
+			InvalidateRegion(b.x, b.y, b.x + b.w, b.y + b.h);
+		}
+		return;
+	}
+#endif
 	if(g_ui.isBigScreen())
 	{
 		ColorFillVideoSurfaceArea(guiSAVEBUFFER, 0, g_ui.get_INV_INTERFACE_START_Y(),

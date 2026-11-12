@@ -49,6 +49,9 @@
 #include "TileDef.h"
 #include "Timer_Control.h"
 #include "UILayout.h"
+#ifdef __vita__
+#include "VitaTactical.h"
+#endif
 #include "Vehicles.h"
 #include "Video.h"
 #include "VObject.h"
@@ -237,8 +240,59 @@ void InitializeTacticalInterface()
 }
 
 
+// Hidden bottom panel: the world viewport takes the whole screen height. The panel itself is shut down
+// (as when entering the map screen) and comes back via InitializeCurrentPanel when shown again.
+BOOLEAN gfTacticalPanelHidden = FALSE;
+static BOOLEAN gfHiddenViewportRegion = FALSE; // our full-screen gViewportRegion is defined
+
+static void SetViewportBottom(UINT16 const bottom)
+{
+	g_ui.m_VIEWPORT_END_Y        = bottom;
+	g_ui.m_VIEWPORT_WINDOW_END_Y = bottom;
+	g_ui.m_worldClippingRect.set(0, 0, SCREEN_WIDTH, bottom);
+}
+
+static void EnterHiddenPanelViewport()
+{
+	SetViewportBottom(SCREEN_HEIGHT);
+	MSYS_DefineRegion(&gViewportRegion, 0, 0, gsVIEWPORT_END_X, SCREEN_HEIGHT, MSYS_PRIORITY_NORMAL, VIDEO_NO_CURSOR, TacticalViewPortMovementCallback, TacticalViewPortTouchCallback);
+	gfHiddenViewportRegion = TRUE;
+	gRadarRegion.Disable();
+	SetRenderFlags(RENDER_FLAG_FULL);
+}
+
+void ToggleTacticalPanelHidden()
+{
+	if (!gfTacticalPanelHidden && !gfPanelAllocated) return; // only from a live tactical screen
+	if (!gfTacticalPanelHidden)
+	{
+		ShutdownCurrentPanel();
+		SetAllAutoFacesInactive(); // team panel portraits would keep redrawing over the world
+		gfTacticalPanelHidden = TRUE;
+		EnterHiddenPanelViewport();
+	}
+	else
+	{
+		ShutdownCurrentPanel(); // removes our viewport region
+		gfTacticalPanelHidden = FALSE;
+		SetViewportBottom(SCREEN_HEIGHT - 120); // as in UILayout::recalculatePositions
+		gRadarRegion.Enable();
+		InitializeCurrentPanel();
+		if (SOLDIERTYPE* const sel = GetSelectedMan()) SetCurrentTacticalPanelCurrentMerc(sel);
+		fInterfacePanelDirty = DIRTYLEVEL2;
+		SetRenderFlags(RENDER_FLAG_FULL);
+	}
+}
+
+
 void InitializeCurrentPanel()
 {
+	if (gfTacticalPanelHidden)
+	{
+		if (!gfHiddenViewportRegion) EnterHiddenPanelViewport();
+		return;
+	}
+
 	MoveRadarScreen( );
 
 	switch( gsCurInterfacePanel )
@@ -265,13 +319,25 @@ void InitializeCurrentPanel()
 
 	//RefreshMouseRegions( );
 	gfPanelAllocated = TRUE;
+#ifdef __vita__
+	VitaCreateSideButtons();
+#endif
 }
 
 
 void ShutdownCurrentPanel( )
 {
+	if (gfHiddenViewportRegion)
+	{
+		MSYS_RemoveRegion(&gViewportRegion);
+		gfHiddenViewportRegion = FALSE;
+	}
+
 	if ( gfPanelAllocated )
 	{
+#ifdef __vita__
+		VitaRemoveSideButtons();
+#endif
 
 		switch( gsCurInterfacePanel )
 		{
@@ -312,7 +378,7 @@ void SetCurrentTacticalPanelCurrentMerc(SOLDIERTYPE* s)
 			gSelectSMPanelToMerc = s;
 			break;
 		case TEAM_PANEL:
-			SetTEAMPanelCurrentMerc();
+			if (!gfTacticalPanelHidden) SetTEAMPanelCurrentMerc(); // touches the panel's buttons
 			break;
 		default:
 			break;
@@ -2216,4 +2282,21 @@ void RenderTopmostMultiPurposeLocator( )
 	RegisterBackgroundRectSingleFilled(sXPos, sYPos, 40, 40);
 
 	BltVideoObject(FRAME_BUFFER, guiRADIO, gbMultiPurposeLocatorFrame, sXPos, sYPos);
+}
+
+
+
+// ---- Vita action wheel: run a door-menu entry chosen on the wheel once the menu pops up ----
+// slot order matches VitaDoorAction in VitaTactical.h
+bool VitaDoorMenuIsOpen() { return gfInOpenDoorMenu; }
+
+bool VitaDoorMenuActivate(int const slot)
+{
+	static int const icons[] = { OPEN_DOOR_ICON, EXAMINE_DOOR_ICON, LOCKPICK_DOOR_ICON, BOOT_DOOR_ICON,
+		USE_KEYRING_ICON, UNTRAP_DOOR_ICON, USE_CROWBAR_ICON, EXPLOSIVE_DOOR_ICON };
+	if (!gfInOpenDoorMenu || slot < 0 || slot >= (int)lengthof(icons)) return false;
+	GUIButtonRef const b = iActionIcons[icons[slot]];
+	if (!b || !b->Enabled()) return false; // leave the menu up for the player to choose
+	BtnDoorMenuCallback(b, MSYS_CALLBACK_REASON_POINTER_UP);
+	return true;
 }
